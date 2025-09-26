@@ -42,23 +42,66 @@ def download_nvd_json(year):
     gz_path.unlink()
     return json_path
 
+
+def get_cvss_data(metrics: dict):
+    """
+    Try CVSS v3.1 -> v3.0 -> v2 in order, return (score, severity).
+    """
+    for key in ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]:
+        if key in metrics and metrics[key]:
+            data = metrics[key][0].get("cvssData", {})
+            return data.get("baseScore", "N/A"), data.get("baseSeverity", "N/A")
+    return "N/A", "N/A"
+
+
 def extract_cve_examples(cve_record):
     """
-    Convert a single CVE record to one training example.
+    Convert a single CVE record to multiple training examples.
     """
+    examples = []
+
     cve_id = cve_record.get("cve", {}).get("id", "UNKNOWN")
     descriptions = cve_record.get("cve", {}).get("descriptions", [])
     en_desc = next((d["value"] for d in descriptions if d["lang"] == "en"), "")
-    
-    metrics = cve_record.get("cve", {}).get("metrics", {})
-    cvss_v3 = metrics.get("cvssMetricV31", [{}])[0].get("cvssData", {})
-    base_score = cvss_v3.get("baseScore", "N/A")
-    severity = cvss_v3.get("baseSeverity", "N/A")
-    
-    input_text = f"CVE ID: {cve_id}\nSummary: {en_desc}\nCVSS Score: {base_score}, Severity: {severity}\nQuestion: Describe the vulnerability."
-    target_text = en_desc
 
-    return {"input": input_text, "target": target_text}
+    metrics = cve_record.get("cve", {}).get("metrics", {})
+    base_score, severity = get_cvss_data(metrics)
+
+    # Mitigation info can sometimes be in references
+    references = cve_record.get("cve", {}).get("references", [])
+    mitigation_refs = [r.get("url") for r in references if r.get("tags") and "Mitigation" in r["tags"]]
+    mitigation_text = (
+        "Mitigation information is not explicitly provided."
+        if not mitigation_refs
+        else "Refer to: " + "; ".join(mitigation_refs)
+    )
+
+    # Q1: Severity
+    examples.append({
+        "input": f"What is the severity of {cve_id}?",
+        "target": f"The severity of {cve_id} is {severity}."
+    })
+
+    # Q2: Risk score
+    examples.append({
+        "input": f"What is the risk score of {cve_id}?",
+        "target": f"The CVSS base score of {cve_id} is {base_score}."
+    })
+
+    # Q3: Summarize
+    examples.append({
+        "input": f"Summarize {cve_id}.",
+        "target": en_desc or "No summary available."
+    })
+
+    # Q4: Mitigation
+    examples.append({
+        "input": f"How can I mitigate {cve_id}?",
+        "target": mitigation_text
+    })
+
+    return examples, (cve_id, base_score, severity)
+
 
 # -------------------------
 # MAIN
@@ -77,9 +120,39 @@ for year in YEARS:
         data = json.load(f)
 
     vulnerabilities = data.get("vulnerabilities", [])
+
+    # Track per-year stats
+    year_cves = []
+
     for vuln in vulnerabilities:
-        example = extract_cve_examples(vuln)
-        all_examples.append(example)
+        examples, summary_info = extract_cve_examples(vuln)
+        all_examples.extend(examples)
+        year_cves.append(summary_info)  # (cve_id, score, severity)
+
+    # Aggregate Q&A for this year
+    if year_cves:
+        # Convert score safely
+        scored = [(cve, float(score) if isinstance(score, (int, float)) or str(score).replace('.', '', 1).isdigit() else -1, sev)
+                  for cve, score, sev in year_cves]
+
+        # Top 10 critical
+        criticals = [x for x in scored if x[2].upper() == "CRITICAL"]
+        criticals_sorted = sorted(criticals, key=lambda x: x[1], reverse=True)
+        top10 = [c[0] for c in criticals_sorted[:10]]
+        top10_text = ", ".join(top10) if top10 else "No critical CVEs found."
+
+        all_examples.append({
+            "input": f"What are the top 10 critical CVEs found in year {year}?",
+            "target": top10_text
+        })
+
+        # Count high + critical
+        high_count = sum(1 for _, _, sev in scored if str(sev).upper() == "HIGH")
+        crit_count = sum(1 for _, _, sev in scored if str(sev).upper() == "CRITICAL")
+        all_examples.append({
+            "input": f"Can you give me the count of high and critical severity CVEs found in {year}?",
+            "target": f"In {year}, there were {high_count} high severity CVEs and {crit_count} critical severity CVEs."
+        })
 
     # Delete raw JSON after processing
     json_path.unlink()
