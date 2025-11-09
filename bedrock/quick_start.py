@@ -8,9 +8,9 @@ import os
 import json
 import sys
 import csv
+import argparse
 from dotenv import load_dotenv
 from src.cve_analyzer import CVEAnalyzer
-import parseargs
 
 # Load environment variables
 load_dotenv()
@@ -257,10 +257,21 @@ def main(input_file: str, output_file: str):
 
 
 if __name__ == "__main__":
-    parseargs = parseargs.ArgumentParser()
-    parseargs.add_argument("--input-json-file", help="Path to input vulnerabilities JSON file", required=True)
-    parseargs.add_argument("--output-csv-file", help="Path to output CSV file", default="cve_analysis_results.csv")
-    args = parseargs.parse_args()
+    parser = argparse.ArgumentParser(
+        description="CVE Vulnerability Analysis Tool - Batch Processor"
+    )
+    parser.add_argument(
+        "--input-json-file",
+        help="Path to input vulnerabilities JSON file",
+        required=True
+    )
+    parser.add_argument(
+        "--output-csv-file",
+        help="Path to output CSV file",
+        default="cve_analysis_results.csv"
+    )
+    args = parser.parse_args()
+
     try:
         main(args.input_json_file, args.output_csv_file)
     except KeyboardInterrupt:
