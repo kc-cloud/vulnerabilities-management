@@ -53,7 +53,7 @@ class CVEAnalyzer:
     def __init__(
         self,
         aws_region: str = "us-east-1",
-        model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        model_id: str = "anthropic.claude-3-5-sonnet-20240620-v1:0",
         nvd_api_key: Optional[str] = None,
     ):
         """
