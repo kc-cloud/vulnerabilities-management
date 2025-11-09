@@ -68,6 +68,7 @@ class CVEAnalyzer:
 
         # Initialize AWS Bedrock LLM
         self.llm = ChatBedrock(
+            credentials_profile_name='sectool-dev',
             model_id=model_id,
             region_name=aws_region,
             model_kwargs={
