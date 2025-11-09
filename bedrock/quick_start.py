@@ -10,6 +10,7 @@ import sys
 import csv
 from dotenv import load_dotenv
 from src.cve_analyzer import CVEAnalyzer
+import parseargs
 
 # Load environment variables
 load_dotenv()
@@ -209,23 +210,12 @@ def process_vulnerabilities(data, analyzer, output_file):
     }
 
 
-def main():
+def main(input_file: str, output_file: str):
     """Main execution function"""
 
     print("\n" + "=" * 80)
     print("CVE VULNERABILITY ANALYSIS TOOL - BATCH PROCESSOR")
     print("=" * 80)
-
-    # Check for input file argument
-    if len(sys.argv) < 2:
-        print("\nUsage: python quick_start.py <vulnerabilities.json> [output_file.csv]")
-        print("\nExample:")
-        print("  python quick_start.py vulnerabilities.json")
-        print("  python quick_start.py vulnerabilities.json cve_analysis_results.csv")
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else "cve_analysis_results.csv"
 
     print(f"\nInput File:  {input_file}")
     print(f"Output File: {output_file}")
@@ -267,8 +257,12 @@ def main():
 
 
 if __name__ == "__main__":
+    parseargs = parseargs.ArgumentParser()
+    parseargs.add_argument("--input-json-file", help="Path to input vulnerabilities JSON file", required=True)
+    parseargs.add_argument("--output-csv-file", help="Path to output CSV file", default="cve_analysis_results.csv")
+    args = parseargs.parse_args()
     try:
-        main()
+        main(args.input_json_file, args.output_csv_file)
     except KeyboardInterrupt:
         print("\n\nAnalysis interrupted by user")
         sys.exit(1)
