@@ -8,8 +8,8 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 from langchain_aws import ChatBedrock
-from langchain.prompts import ChatPromptTemplate
-from langchain.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 
 from .nvd_client import NVDClient
 
@@ -87,9 +87,9 @@ class CVEAnalyzer:
 
         format_instructions = self.output_parser.get_format_instructions()
 
-        template = """You are a senior cybersecurity analyst specializing in container security and CVE risk assessment for Kubernetes and ECS environments protected by RedHat Advanced Cluster Security (ACS) and Prisma Compute.
+        template = """You are a senior cybersecurity analyst specializing in container security and CVE risk assessment for Kubernetes and ECS environments.
 
-Your task is to analyze a CVE exemption request and provide a comprehensive security assessment.
+Your task is to analyze a CVE exemption request and provide a comprehensive security assessment that accounts for the EXISTING SECURITY CONTROLS already protecting this environment.
 
 **CVE INFORMATION:**
 - CVE ID: {cve_id}
@@ -103,41 +103,110 @@ Your task is to analyze a CVE exemption request and provide a comprehensive secu
 - Attack Complexity: {attack_complexity}
 - Privileges Required: {privileges_required}
 - User Interaction: {user_interaction}
-- CIA Impact: C={confidentiality_impact}, I={integrity_impact}, A={availability_impact}
+- Impact Scope: Confidentiality={confidentiality_impact}, Integrity={integrity_impact}, Availability={availability_impact}
 - Description: {description}
 - CWE IDs: {cwe_ids}
 - References: {references}
 
+**EXISTING SECURITY CONTROLS IN DATACENTER:**
+
+Our AWS-based datacenter already has multiple layers of defense-in-depth security controls:
+
+**Network Security:**
+- All VPCs route through a central VPC protected by PaloAlto Network Firewall (no direct internet access)
+- VPC-to-VPC communication uses AWS Private Endpoints only
+- All web application traffic is routed through AWS WAF
+
+**Endpoint & Runtime Security:**
+- CrowdStrike, Elastic-agent, and Carbon Black provide endpoint protection on all VMs
+- RedHat ACS and Prisma Compute provide runtime security for EKS, ECS clusters, and Docker hosts
+  * Runtime threat detection and prevention
+  * Network segmentation enforcement
+  * Admission control policies
+  * Vulnerability runtime protection
+
+**Detection & Response:**
+- Elastic SIEM with detection rules monitoring VMs, firewalls, and cloud infrastructure
+- Prisma Cloud Enterprise monitoring for AWS cloud anomalies and misconfigurations
+
+**CRITICAL INSTRUCTION:**
+Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEXT-AWARE risk assessment that considers:
+1. How the existing security controls reduce the attack surface
+2. Which attack vectors are blocked or significantly hindered by current defenses
+3. Whether the vulnerability can actually be exploited given the security architecture
+4. What additional layers an attacker must bypass to exploit this CVE
+
 **ANALYSIS REQUIREMENTS:**
 
-1. **Risk Assessment**
-   - Determine overall risk level considering CVSS score, attack vector, and environment
-   - For containerized environments, assess potential for container escape, privilege escalation, or lateral movement
+1. **Context-Aware Risk Assessment**
+   - Start with the CVE's attack vector and determine which existing controls block or mitigate it:
+     * Network-based exploits: Consider PaloAlto firewall, WAF, private endpoints, network segmentation
+     * Local exploits: Consider endpoint protection (CrowdStrike, Elastic-agent, Carbon Black)
+     * Container runtime exploits: Consider RedHat ACS/Prisma Compute runtime policies
+     * Web application exploits: Consider WAF protection
+   - Assess the REALISTIC risk level after accounting for defense-in-depth, not just the CVSS score
+   - For containerized environments, consider if container escape/privilege escalation is prevented by runtime security
 
-2. **Exploitability Analysis**
-   - Rate exploitability from 1-10 based on attack complexity, privileges required, and public exploit availability
+2. **Exploitability Analysis with Defense Considerations**
+   - Rate exploitability from 1-10, but REDUCE the score based on:
+     * Attack vector blocked by existing controls (e.g., Network attack blocked by firewall = -3 to -5 points)
+     * Multiple security layers attacker must bypass (each layer = -1 to -2 points)
+     * Active detection/prevention by SIEM, endpoint protection, or runtime security (= -2 to -3 points)
    - Identify if CVE is in CISA KEV catalog or has known active exploitation
-   - Check for public PoCs on ExploitDB, Metasploit, GitHub
+   - Check for public PoCs, but consider if they're viable given the security architecture
 
-3. **Impact Analysis**
-   - Analyze CIA triad impact in context of container runtime
-   - Assess blast radius in K8s/ECS cluster environment
+3. **Defense Evasion Analysis**
+   - Determine if the exploit can bypass:
+     * PaloAlto Firewall threat prevention
+     * AWS WAF rules (for web exploits)
+     * Endpoint detection (CrowdStrike/Elastic-agent/Carbon Black)
+     * Runtime security policies (ACS/Prisma Compute)
+     * SIEM detection rules
+   - If exploit requires multiple evasions, significantly reduce exploitability score
 
-4. **Patch Status**
+4. **Practical Impact Analysis**
+   - Assess REALISTIC business/operational impact IF the vulnerability were successfully exploited:
+     * Can an attacker access sensitive data (customer PII, credentials, API keys, business data)?
+     * Can an attacker disrupt services or cause downtime?
+     * Can an attacker modify critical data or configurations?
+     * What is the worst-case scenario in OUR environment specifically?
+   - Evaluate how containment controls limit blast radius:
+     * Network segmentation preventing lateral movement to other VPCs/services
+     * Runtime policies preventing container escape to underlying host
+     * SIEM alerting enabling rapid detection and response (mean time to detect)
+     * Endpoint protection preventing persistence mechanisms
+   - Determine REALISTIC impact given our security architecture, not theoretical maximum impact from CVSS scores
+
+5. **Patch Status**
    - Determine if patch/update exists and specific version that fixes the CVE
    - If no patch, provide vendor timeline or workaround availability
 
-5. **Compensating Controls**
-   - Recommend specific RedHat ACS or Prisma Compute runtime policies (e.g., network policies, admission controllers, runtime monitoring)
-   - Suggest external controls: WAF for web exploits, network segmentation, SIEM alerting, IDS/IPS
+6. **Additional Compensating Controls (If Needed)**
+   - ONLY recommend additional controls if existing ones are insufficient
+   - Suggest specific RedHat ACS or Prisma Compute policy enhancements
+   - Recommend additional SIEM detection rules or firewall policies if gaps exist
 
-6. **Exemption Decision**
-   Use these criteria:
-   - **DENIED** if: CVSS >= 9.0 OR active exploits exist OR patch available with easy upgrade path
-   - **CONDITIONAL** if: 7.0 <= CVSS < 9.0 AND compensating controls can significantly reduce risk
-   - **APPROVED** if: CVSS < 7.0 AND (attack complexity is HIGH OR significant privileges required) AND compensating controls in place
+7. **Exemption Decision - Context-Aware Criteria**
 
-   Provide 2-3 sentence justification and specific caveats/conditions (time-bound approval, required controls, monitoring requirements).
+   **DENIED** if:
+   - Active exploits exist AND existing controls cannot reliably prevent exploitation
+   - Patch available with easy upgrade path AND vulnerability is HIGH risk AFTER considering existing controls
+   - CVSS >= 9.0 AND attack vector is NOT blocked by existing security architecture
+
+   **CONDITIONAL** if:
+   - CVSS >= 7.0 BUT existing controls significantly reduce exploitability (e.g., network attack blocked by firewall)
+   - Active exploits exist BUT would require multiple evasions to succeed
+   - Minor gaps in coverage that can be addressed with specific policy enhancements
+   - Time-bound approval while patch is being tested/deployed
+
+   **APPROVED** if:
+   - CVSS < 7.0 AND existing controls provide adequate protection
+   - Attack vector is fully blocked by existing architecture (e.g., requires direct internet access but none exists)
+   - Exploit requires multiple privilege escalations AND endpoint protection actively monitors for this behavior
+   - Attack complexity is HIGH AND SIEM/runtime security provides detection/prevention
+   - Vulnerability is theoretical/requires conditions that cannot occur in our environment
+
+   Provide 2-3 sentence justification that explicitly references which existing security controls mitigate this CVE and why the residual risk is acceptable (or not).
 
 {format_instructions}
 
