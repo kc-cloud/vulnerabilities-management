@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Quick Start Example
-Process multiple CVEs from a JSON file and output to a single analysis file
+Process multiple CVEs from a JSON file and output to a single CSV file
 """
 
 import os
 import json
 import sys
-from datetime import datetime
+import csv
 from dotenv import load_dotenv
 from src.cve_analyzer import CVEAnalyzer
 
@@ -30,15 +30,9 @@ def load_vulnerabilities(json_file_path):
 
 
 def process_vulnerabilities(data, analyzer, output_file):
-    """Process all vulnerabilities and write to output file"""
+    """Process all vulnerabilities and write to CSV file"""
 
-    all_results = {
-        "analysis_timestamp": datetime.now().isoformat(),
-        "total_cves_processed": 0,
-        "fixable_cves": {},
-        "nonfixable_cves": {}
-    }
-
+    csv_rows = []
     total_vulns = 0
     successful_analyses = 0
 
@@ -53,11 +47,6 @@ def process_vulnerabilities(data, analyzer, output_file):
             print(f"CVE: {cve_id} ({len(vulnerabilities)} instances)")
             print(f"{'─' * 80}")
 
-            all_results["fixable_cves"][cve_id] = {
-                "instances": [],
-                "total_instances": len(vulnerabilities)
-            }
-
             for idx, vuln in enumerate(vulnerabilities, 1):
                 total_vulns += 1
 
@@ -66,6 +55,7 @@ def process_vulnerabilities(data, analyzer, output_file):
                 vuln_type = vuln.get("Vulnerability Type", "unknown")
                 image = vuln.get("Image", "unknown")
                 severity = vuln.get("Severity", "unknown")
+                summary = vuln.get("Summary", "")
 
                 print(f"\n  [{idx}/{len(vulnerabilities)}] Analyzing {component} v{version}")
                 print(f"      Type: {vuln_type} | Severity: {severity} | Image: {image}")
@@ -83,24 +73,44 @@ def process_vulnerabilities(data, analyzer, output_file):
                     successful_analyses += 1
                     print(f"      ✓ Risk: {result.risk_level} | Exploitability: {result.exploitability_score}/10 | Decision: {result.exemption_decision}")
 
-                    # Add to results
-                    instance_data = {
-                        "package": component,
-                        "version": version,
-                        "vulnerability_type": vuln_type,
-                        "image": image,
-                        "severity": severity,
-                        "summary": vuln.get("Summary", ""),
-                        "analysis": result.model_dump()
+                    # Build CSV row
+                    csv_row = {
+                        "CVE ID": cve_id,
+                        "Fixable": "Yes",
+                        "Package": component,
+                        "Version": version,
+                        "Vulnerability Type": vuln_type,
+                        "Image": image,
+                        "Original Severity": severity,
+                        "Summary": summary,
+                        "Risk Level": result.risk_level,
+                        "Exploitability Score": result.exploitability_score,
+                        "Active Exploits Exist": "Yes" if result.active_exploits_exist else "No",
+                        "Patch Available": "Yes" if result.patch_available else "No",
+                        "Patch Details": result.patch_details,
+                        "Exemption Decision": result.exemption_decision,
+                        "Exemption Justification": result.exemption_justification,
+                        "Caveats and Conditions": result.caveats_and_conditions,
+                        "Runtime Policy Recommendations": result.runtime_policy_recommendations,
+                        "External Controls Recommendations": result.external_controls_recommendations,
+                        "Mitigation Strategies": result.mitigation_strategies,
+                        "Container Specific Risks": result.container_specific_risks,
                     }
-                    all_results["fixable_cves"][cve_id]["instances"].append(instance_data)
+                    csv_rows.append(csv_row)
                 else:
                     print(f"      ✗ Analysis failed")
-                    all_results["fixable_cves"][cve_id]["instances"].append({
-                        "package": component,
-                        "version": version,
-                        "error": "Analysis failed"
-                    })
+                    csv_row = {
+                        "CVE ID": cve_id,
+                        "Fixable": "Yes",
+                        "Package": component,
+                        "Version": version,
+                        "Vulnerability Type": vuln_type,
+                        "Image": image,
+                        "Original Severity": severity,
+                        "Summary": summary,
+                        "Error": "Analysis failed"
+                    }
+                    csv_rows.append(csv_row)
 
     # Process non-fixable CVEs
     print("\n\n" + "=" * 80)
@@ -113,11 +123,6 @@ def process_vulnerabilities(data, analyzer, output_file):
             print(f"CVE: {cve_id} ({len(vulnerabilities)} instances)")
             print(f"{'─' * 80}")
 
-            all_results["nonfixable_cves"][cve_id] = {
-                "instances": [],
-                "total_instances": len(vulnerabilities)
-            }
-
             for idx, vuln in enumerate(vulnerabilities, 1):
                 total_vulns += 1
 
@@ -126,6 +131,7 @@ def process_vulnerabilities(data, analyzer, output_file):
                 vuln_type = vuln.get("Vulnerability Type", "unknown")
                 image = vuln.get("Image", "unknown")
                 severity = vuln.get("Severity", "unknown")
+                summary = vuln.get("Summary", "")
 
                 print(f"\n  [{idx}/{len(vulnerabilities)}] Analyzing {component} v{version}")
                 print(f"      Type: {vuln_type} | Severity: {severity} | Image: {image}")
@@ -143,35 +149,64 @@ def process_vulnerabilities(data, analyzer, output_file):
                     successful_analyses += 1
                     print(f"      ✓ Risk: {result.risk_level} | Exploitability: {result.exploitability_score}/10 | Decision: {result.exemption_decision}")
 
-                    # Add to results
-                    instance_data = {
-                        "package": component,
-                        "version": version,
-                        "vulnerability_type": vuln_type,
-                        "image": image,
-                        "severity": severity,
-                        "summary": vuln.get("Summary", ""),
-                        "analysis": result.model_dump()
+                    # Build CSV row
+                    csv_row = {
+                        "CVE ID": cve_id,
+                        "Fixable": "No",
+                        "Package": component,
+                        "Version": version,
+                        "Vulnerability Type": vuln_type,
+                        "Image": image,
+                        "Original Severity": severity,
+                        "Summary": summary,
+                        "Risk Level": result.risk_level,
+                        "Exploitability Score": result.exploitability_score,
+                        "Active Exploits Exist": "Yes" if result.active_exploits_exist else "No",
+                        "Patch Available": "Yes" if result.patch_available else "No",
+                        "Patch Details": result.patch_details,
+                        "Exemption Decision": result.exemption_decision,
+                        "Exemption Justification": result.exemption_justification,
+                        "Caveats and Conditions": result.caveats_and_conditions,
+                        "Runtime Policy Recommendations": result.runtime_policy_recommendations,
+                        "External Controls Recommendations": result.external_controls_recommendations,
+                        "Mitigation Strategies": result.mitigation_strategies,
+                        "Container Specific Risks": result.container_specific_risks,
                     }
-                    all_results["nonfixable_cves"][cve_id]["instances"].append(instance_data)
+                    csv_rows.append(csv_row)
                 else:
                     print(f"      ✗ Analysis failed")
-                    all_results["nonfixable_cves"][cve_id]["instances"].append({
-                        "package": component,
-                        "version": version,
-                        "error": "Analysis failed"
-                    })
+                    csv_row = {
+                        "CVE ID": cve_id,
+                        "Fixable": "No",
+                        "Package": component,
+                        "Version": version,
+                        "Vulnerability Type": vuln_type,
+                        "Image": image,
+                        "Original Severity": severity,
+                        "Summary": summary,
+                        "Error": "Analysis failed"
+                    }
+                    csv_rows.append(csv_row)
 
-    # Update summary stats
-    all_results["total_cves_processed"] = total_vulns
-    all_results["successful_analyses"] = successful_analyses
-    all_results["failed_analyses"] = total_vulns - successful_analyses
+    # Write all results to CSV file
+    if csv_rows:
+        # Get all unique field names from all rows
+        fieldnames = []
+        for row in csv_rows:
+            for key in row.keys():
+                if key not in fieldnames:
+                    fieldnames.append(key)
 
-    # Write all results to output file
-    with open(output_file, 'w') as f:
-        json.dump(all_results, f, indent=2)
+        with open(output_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(csv_rows)
 
-    return all_results
+    return {
+        "total_cves_processed": total_vulns,
+        "successful_analyses": successful_analyses,
+        "failed_analyses": total_vulns - successful_analyses
+    }
 
 
 def main():
@@ -183,14 +218,14 @@ def main():
 
     # Check for input file argument
     if len(sys.argv) < 2:
-        print("\nUsage: python quick_start.py <vulnerabilities.json> [output_file.json]")
+        print("\nUsage: python quick_start.py <vulnerabilities.json> [output_file.csv]")
         print("\nExample:")
         print("  python quick_start.py vulnerabilities.json")
-        print("  python quick_start.py vulnerabilities.json cve_analysis_results.json")
+        print("  python quick_start.py vulnerabilities.json cve_analysis_results.csv")
         sys.exit(1)
 
     input_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else "cve_analysis_results.json"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "cve_analysis_results.csv"
 
     print(f"\nInput File:  {input_file}")
     print(f"Output File: {output_file}")
