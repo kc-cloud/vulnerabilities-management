@@ -6,11 +6,16 @@ Interactive web interface for analyzing individual CVEs
 
 import os
 import streamlit as st
-from dotenv import load_dotenv
-from src.cve_analyzer import CVEAnalyzer
 
-# Load environment variables
-load_dotenv()
+# Optional: Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, will use environment variables directly
+    pass
+
+from src.cve_analyzer import CVEAnalyzer
 
 
 def init_analyzer():

@@ -118,6 +118,11 @@ Our AWS-based datacenter already has multiple layers of defense-in-depth securit
 - VPC-to-VPC communication uses AWS Private Endpoints only
 - All web application traffic is routed through AWS WAF
 
+**Hardened Infrastructure:**
+- All EKS cluster nodes and Docker hosts run on hardened Virtual Machines
+- VM hardening meets >85% compliance with CIS (Center for Internet Security) benchmark requirements
+- Security baselines include: disabled unnecessary services, restricted network access, secure configurations, and minimal attack surface
+
 **Endpoint & Runtime Security:**
 - CrowdStrike, Elastic-agent, and Carbon Black provide endpoint protection on all VMs
 - RedHat ACS and Prisma Compute provide runtime security for EKS, ECS clusters, and Docker hosts
@@ -125,6 +130,7 @@ Our AWS-based datacenter already has multiple layers of defense-in-depth securit
   * Network segmentation enforcement
   * Admission control policies
   * Vulnerability runtime protection
+  * **Pod exec restrictions**: kubectl exec commands to pods are blocked by policy (prevents interactive shell access to containers)
 
 **Detection & Response:**
 - Elastic SIEM with detection rules monitoring VMs, firewalls, and cloud infrastructure
@@ -142,11 +148,15 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
 1. **Context-Aware Risk Assessment**
    - Start with the CVE's attack vector and determine which existing controls block or mitigate it:
      * Network-based exploits: Consider PaloAlto firewall, WAF, private endpoints, network segmentation
-     * Local exploits: Consider endpoint protection (CrowdStrike, Elastic-agent, Carbon Black)
-     * Container runtime exploits: Consider RedHat ACS/Prisma Compute runtime policies
+     * Local exploits: Consider endpoint protection (CrowdStrike, Elastic-agent, Carbon Black) AND CIS-hardened VMs (>85% compliance)
+     * Container runtime exploits: Consider RedHat ACS/Prisma Compute runtime policies AND pod exec restrictions
      * Web application exploits: Consider WAF protection
+     * Host-level exploits: Consider CIS-hardened VMs with disabled unnecessary services, restricted access, and minimal attack surface
    - Assess the REALISTIC risk level after accounting for defense-in-depth, not just the CVSS score
-   - For containerized environments, consider if container escape/privilege escalation is prevented by runtime security
+   - For containerized environments, consider if:
+     * Container escape/privilege escalation is prevented by runtime security AND hardened host VMs
+     * Interactive exploitation is possible given pod exec is blocked (attacker cannot get shell access to containers)
+     * The vulnerability requires services/ports that are disabled in CIS-hardened VMs
 
 2. **Exploitability Analysis with Defense Considerations**
    - Rate exploitability from 1-10, but REDUCE the score based on:
@@ -162,7 +172,13 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
      * AWS WAF rules (for web exploits)
      * Endpoint detection (CrowdStrike/Elastic-agent/Carbon Black)
      * Runtime security policies (ACS/Prisma Compute)
+     * Pod exec restrictions (no interactive shell access to containers)
+     * CIS-hardened VM configurations (disabled services, restricted access)
      * SIEM detection rules
+   - Consider if exploitation requires:
+     * Interactive shell access (blocked by pod exec restrictions)
+     * Services/ports that are disabled in CIS-hardened VMs
+     * Privilege escalation on hardened infrastructure
    - If exploit requires multiple evasions, significantly reduce exploitability score
 
 4. **Practical Impact Analysis**
@@ -174,9 +190,12 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
    - Evaluate how containment controls limit blast radius:
      * Network segmentation preventing lateral movement to other VPCs/services
      * Runtime policies preventing container escape to underlying host
+     * CIS-hardened VMs limiting host-level exploitation and persistence
+     * Pod exec restrictions preventing interactive post-exploitation
      * SIEM alerting enabling rapid detection and response (mean time to detect)
      * Endpoint protection preventing persistence mechanisms
    - Determine REALISTIC impact given our security architecture, not theoretical maximum impact from CVSS scores
+   - Consider that many CVE exploitation guides assume shell access - which is blocked in our environment
 
 5. **Patch Status**
    - Determine if patch/update exists and specific version that fixes the CVE
