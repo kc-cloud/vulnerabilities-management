@@ -59,6 +59,8 @@ def render_analysis_result(result):
 
     with col2:
         st.metric("Exploitability Score", f"{result.exploitability_score}/10")
+        with st.expander("ℹ️ How was this calculated?"):
+            st.info(result.exploitability_explanation)
 
     with col3:
         exploit_status = "YES ⚠️" if result.active_exploits_exist else "NO ✓"

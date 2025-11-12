@@ -22,6 +22,9 @@ class CVEAnalysisResult(BaseModel):
     exploitability_score: int = Field(
         description="Exploitability score from 1-10 (10=easiest to exploit)", ge=1, le=10
     )
+    exploitability_explanation: str = Field(
+        description="Detailed explanation of how the exploitability score was calculated, including base score and reductions from each security control layer"
+    )
     active_exploits_exist: bool = Field(description="Whether active exploits exist in the wild")
     cia_impact: Dict[str, str] = Field(
         description="Impact on Confidentiality, Integrity, Availability"
@@ -165,6 +168,9 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
      * Active detection/prevention by SIEM, endpoint protection, or runtime security (= -2 to -3 points)
    - Identify if CVE is in CISA KEV catalog or has known active exploitation
    - Check for public PoCs, but consider if they're viable given the security architecture
+   - **IMPORTANT**: Provide a detailed explanation of the exploitability score calculation in the exploitability_explanation field using this format:
+     "Base exploitability: X/10 (reason). Reduced by Y points due to [specific control]. Reduced by Z points due to [another control]. Final score: N/10."
+     Example: "Base exploitability: 9/10 (public exploit available, low complexity). Reduced by 4 points due to PaloAlto firewall blocking network attack vector. Reduced by 2 points due to pod exec restrictions preventing interactive exploitation. Final score: 3/10."
 
 3. **Defense Evasion Analysis**
    - Determine if the exploit can bypass:
