@@ -18,7 +18,7 @@ The CVE Analyzer now includes a **Multi-Model Comparison** page that allows you 
    - Cost-effective option
    - Strong multi-step analysis
 
-3. **Claude 3 Opus** (`anthropic.claude-3-opus-20240229`)
+3. **Claude 3 Opus** (`anthropic.claude-3-opus-20240229-v1:0`)
    - Most capable Claude model
    - Best for high-stakes decisions
    - Superior nuanced analysis

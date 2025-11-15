@@ -29,20 +29,20 @@ MODELS = {
         "description": "Anthropic's balanced model (Current)",
         "color": "#8B5CF6"
     },
+    "Claude Sonnet 4.1": {
+        "model_id": "anthropic.claude-sonnet-4-1-20250805-v1:0",
+        "description": "Anthropic's latest, most capable model",
+        "color": "#7C3AED"
+    },
+    "Claude 4.1 Opus": {
+        "model_id": "anthropic.claude-4-1-opus-20250805-v1:0",
+        "description": "Anthropic's most capable model (flagship)",
+        "color": "#A78BFA"
+    },
     "Amazon Nova Pro": {
         "model_id": "amazon.nova-pro-v1:0",
         "description": "Amazon's flagship reasoning model",
         "color": "#FF9900"
-    },
-    "Claude 3 Opus": {
-        "model_id": "anthropic.claude-3-opus-20240229",
-        "description": "Anthropic's most capable model",
-        "color": "#7C3AED"
-    },
-    "Llama 3.3 70B": {
-        "model_id": "meta.llama3-3-70b-instruct-v1:0",
-        "description": "Meta's cost-effective open model",
-        "color": "#3B82F6"
     }
 }
 

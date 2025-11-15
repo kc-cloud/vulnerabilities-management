@@ -76,8 +76,32 @@ MODEL_CONFIGS = {
         supports_json_mode=True,
         needs_explicit_format=True,  # Nova benefits from explicit format examples
     ),
-    "anthropic.claude-3-opus-20240229": ModelConfig(
-        model_id="anthropic.claude-3-opus-20240229",
+    "anthropic.claude-sonnet-4-1-20250805-v1:0": ModelConfig(
+        model_id="anthropic.claude-sonnet-4-1-20250805-v1:0",
+        temperature=0.1,
+        max_tokens=4000,
+        prompt_style="detailed",
+        supports_json_mode=True,
+        needs_explicit_format=False,
+    ),
+    "anthropic.claude-4-1-opus-20250805-v1:0": ModelConfig(
+        model_id="anthropic.claude-4-1-opus-20250805-v1:0",
+        temperature=0.1,
+        max_tokens=4000,
+        prompt_style="detailed",
+        supports_json_mode=True,
+        needs_explicit_format=False,
+    ),
+    "anthropic.claude-3-haiku-20240307-v1:0": ModelConfig(
+        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        temperature=0.1,
+        max_tokens=4000,
+        prompt_style="detailed",
+        supports_json_mode=True,
+        needs_explicit_format=False,
+    ),
+    "anthropic.claude-3-opus-20240229-v1:0": ModelConfig(
+        model_id="anthropic.claude-3-opus-20240229-v1:0",
         temperature=0.1,
         max_tokens=4000,
         prompt_style="detailed",
