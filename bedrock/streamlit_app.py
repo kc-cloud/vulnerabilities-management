@@ -117,7 +117,7 @@ def main():
     )
 
     # Header
-    st.title("🔒 CVE Security Analysis Tool")
+    st.title("🔒 Single CVE Analysis Tool")
     st.markdown("""
     **Context-Aware CVE Risk Assessment** for containerized environments with defense-in-depth security controls.
 
@@ -140,6 +140,11 @@ def main():
 
         **Profile:** sectool-dev
         """)
+
+        st.markdown("---")
+        st.markdown("### 🔬 Other Pages")
+        st.page_link("pages/1_🔬_Model_Comparison.py", label="🔬 Multi-Model Comparison", icon="🔬")
+        st.caption("Compare results across 4 different Bedrock models")
 
         st.markdown("---")
         st.markdown("### 📚 Quick Links")
