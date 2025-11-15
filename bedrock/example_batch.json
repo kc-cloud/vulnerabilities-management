@@ -1,0 +1,23 @@
+[
+  {
+    "cve_id": "CVE-2024-3094",
+    "component_name": "xz-utils",
+    "component_version": "5.6.0",
+    "source_type": "OS",
+    "image_name": "ubuntu:22.04"
+  },
+  {
+    "cve_id": "CVE-2024-21626",
+    "component_name": "runc",
+    "component_version": "1.1.11",
+    "source_type": "OS",
+    "image_name": "docker.io/library/alpine:3.19"
+  },
+  {
+    "cve_id": "CVE-2023-45853",
+    "component_name": "zlib",
+    "component_version": "1.2.11",
+    "source_type": "OS",
+    "image_name": "nginx:1.24-alpine"
+  }
+]

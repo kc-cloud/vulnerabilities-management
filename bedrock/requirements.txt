@@ -1,0 +1,14 @@
+# Core dependencies
+langchain
+langchain-core
+langchain-community
+langchain-aws
+boto3
+requests
+python-dotenv
+
+# Data handling
+pydantic
+
+# Optional but recommended
+rich  # For better console output
