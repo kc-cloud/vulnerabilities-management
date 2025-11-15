@@ -84,8 +84,8 @@ MODEL_CONFIGS = {
         supports_json_mode=True,
         needs_explicit_format=False,
     ),
-    "meta.llama3-3-70b-instruct-v1:0": ModelConfig(
-        model_id="meta.llama3-3-70b-instruct-v1:0",
+    "meta.llama3-70b-instruct-v1:0": ModelConfig(
+        model_id="meta.llama3-70b-instruct-v1:0",
         temperature=0.1,
         max_tokens=4000,
         prompt_style="explicit",

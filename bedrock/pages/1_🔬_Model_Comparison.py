@@ -112,7 +112,8 @@ def create_comparison_dataframe(results: Dict[str, Dict[str, Any]]) -> pd.DataFr
     comparison_data = []
 
     for model_name, data in results.items():
-        if data["error"]:
+        if data["error"] or data["result"] is None:
+            error_msg = data["error"] if data["error"] else "Analysis returned no result"
             comparison_data.append({
                 "Model": model_name,
                 "Status": "❌ Error",
@@ -480,6 +481,33 @@ def main():
                     use_container_width=True,
                     hide_index=True
                 )
+
+                # Show errors if any
+                failed_models = {name: data for name, data in results.items()
+                                if data["error"] or data["result"] is None}
+
+                if failed_models:
+                    st.markdown("---")
+                    st.markdown("## ⚠️ Model Errors")
+
+                    for model_name, data in failed_models.items():
+                        error_msg = data["error"] if data["error"] else "Analysis returned no result"
+                        with st.expander(f"❌ {model_name} - Error Details", expanded=True):
+                            st.error(error_msg)
+                            st.caption(f"Elapsed time: {data['elapsed_time']:.2f}s")
+
+                            # Troubleshooting tips
+                            st.markdown("**Possible solutions:**")
+                            if "access" in error_msg.lower() or "denied" in error_msg.lower():
+                                st.markdown("- Enable this model in AWS Bedrock console")
+                                st.markdown("- Check IAM permissions for Bedrock")
+                            elif "parse" in error_msg.lower() or "json" in error_msg.lower():
+                                st.markdown("- Model may have returned invalid JSON format")
+                                st.markdown("- Check CloudWatch logs for raw output")
+                            else:
+                                st.markdown("- Check network connectivity to AWS")
+                                st.markdown("- Verify AWS credentials are valid")
+                                st.markdown("- Check CloudWatch logs for details")
 
                 # Show detailed comparison
                 st.markdown("---")
