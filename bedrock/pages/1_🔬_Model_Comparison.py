@@ -370,10 +370,10 @@ def main():
     col1, col2, col3 = st.columns([1, 1, 3])
 
     with col1:
-        compare_button = st.button("🔬 Compare Models", type="primary", use_container_width=True)
+        compare_button = st.button("🔬 Compare Models", type="primary", width="stretch")
 
     with col2:
-        if st.button("🔄 Clear Form", use_container_width=True):
+        if st.button("🔄 Clear Form", width="stretch"):
             st.rerun()
 
     # Validation and Analysis
@@ -478,7 +478,7 @@ def main():
                     ).applymap(
                         style_risk, subset=['Risk Level']
                     ),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True
                 )
 

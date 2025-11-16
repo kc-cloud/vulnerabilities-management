@@ -290,6 +290,11 @@ Provide your analysis:"""
         Returns:
             Parsed CVEAnalysisResult or None
         """
+        # Fix common Llama typos before parsing
+        if "meta.llama" in self.model_id:
+            raw_output = raw_output.replace('"exemption_justice":', '"exemption_justification":')
+            raw_output = raw_output.replace("'exemption_justice':", '"exemption_justification":')
+
         try:
             # Try standard parsing first
             return self.output_parser.parse(raw_output)
@@ -302,6 +307,10 @@ Provide your analysis:"""
             if json_match:
                 try:
                     json_str = json_match.group(1)
+                    # Apply Llama fixes to extracted JSON too
+                    if "meta.llama" in self.model_id:
+                        json_str = json_str.replace('"exemption_justice":', '"exemption_justification":')
+                        json_str = json_str.replace("'exemption_justice':", '"exemption_justification":')
                     return self.output_parser.parse(json_str)
                 except:
                     pass
@@ -311,6 +320,10 @@ Provide your analysis:"""
             if json_match:
                 try:
                     json_str = json_match.group(0)
+                    # Apply Llama fixes to extracted JSON too
+                    if "meta.llama" in self.model_id:
+                        json_str = json_str.replace('"exemption_justice":', '"exemption_justification":')
+                        json_str = json_str.replace("'exemption_justice':", '"exemption_justification":')
                     return self.output_parser.parse(json_str)
                 except:
                     pass
