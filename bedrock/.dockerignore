@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+USAGE_GUIDE.md
+MODEL_SPECIFIC_PROMPTING.md
+MULTI_MODEL_COMPARISON.md
+QUICK_START_COMPARISON.md
+
+# Scripts
+setup.sh
+analyze_cve.py
+quick_start.py
+
+# Examples
+example_batch.json
+vulnerabilities_sample.json
+
+# Kubernetes
+k8s/
+
+# Environment (will copy .env.example as .env)
+.env
+
+# Claude
+.claude/
+
+# Test files
+tests/
+*.test.py
