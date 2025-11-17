@@ -26,8 +26,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder
-COPY --from=builder /root/.local /root/.local
+# Copy Python packages from builder to /usr/local
+COPY --from=builder /root/.local/lib /usr/local/lib
+COPY --from=builder /root/.local/bin /usr/local/bin
 
 # Copy application code
 COPY src/ ./src/
@@ -41,9 +42,6 @@ RUN useradd -m -u 1000 streamlit && \
 
 # Switch to non-root user
 USER streamlit
-
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
 
 # Expose Streamlit default port
 EXPOSE 8501
