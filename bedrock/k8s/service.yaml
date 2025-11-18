@@ -6,7 +6,8 @@ metadata:
   labels:
     app: cve-analyzer
   annotations:
-    # AWS Load Balancer Controller annotations for public ALB
+    # AWS Load Balancer Controller annotations for public NLB
+    # Use "external" for AWS LB Controller v2.x+, or "nlb" for v1.x (legacy)
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
