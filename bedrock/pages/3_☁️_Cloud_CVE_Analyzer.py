@@ -128,7 +128,7 @@ def main():
     - **Network Security:** PaloAlto Firewall, AWS WAF, Shield, Private Endpoints
     - **Identity Security:** IAM, MFA, SCPs, temporary credentials, IAM Access Analyzer
     - **Data Protection:** KMS encryption, S3 policies, Secrets Manager, Macie
-    - **Monitoring:** Elastic SIEM, automated remediation workflows
+    - **Monitoring:** Elastic SIEM, real-time alerting, incident response runbooks
     """)
 
     st.markdown("---")
@@ -146,9 +146,10 @@ def main():
 
         st.markdown("---")
         st.markdown("### 📄 Other Pages")
-        st.page_link("streamlit_app.py", label="🔒 Container CVE Analyzer", icon="🐳")
-        st.page_link("pages/1_🔬_Model_Comparison.py", label="🔬 Multi-Model Comparison", icon="🔬")
+        st.page_link("streamlit_app.py", label="🏠 Home", icon="🏠")
+        st.page_link("pages/0_🐳_Container_CVE_Analyzer.py", label="🐳 Container CVE Analyzer", icon="🐳")
         st.page_link("pages/2_💻_VM_CVE_Analyzer.py", label="💻 VM CVE Analyzer", icon="💻")
+        st.page_link("pages/1_🔬_Model_Comparison.py", label="🔬 Multi-Model Comparison", icon="🔬")
 
         st.markdown("---")
         st.markdown("### 📚 Quick Links")

@@ -140,7 +140,7 @@ Our AWS cloud infrastructure has comprehensive defense-in-depth security control
   * **Compliance Monitoring:**
     - CIS AWS Foundations Benchmark compliance scanning and enforcement
     - AWS Security Best Practices benchmark validation
-    - Continuous compliance assessment with automated remediation
+    - Continuous compliance assessment and monitoring
     - Multi-framework compliance reporting (PCI DSS, SOC 2, HIPAA, NIST)
     - Policy-as-code enforcement for infrastructure compliance
   * **Vulnerability Scanning:**
@@ -151,7 +151,7 @@ Our AWS cloud infrastructure has comprehensive defense-in-depth security control
     - Runtime vulnerability protection and detection
     - Prioritized vulnerability remediation based on risk context
   * **Security Monitoring:**
-    - Real-time misconfiguration detection and remediation
+    - Real-time misconfiguration detection and alerting
     - Network visualization and policy enforcement
     - Anomaly detection for unusual cloud activity
     - Identity and access management (IAM) security analysis
@@ -176,14 +176,14 @@ Our AWS cloud infrastructure has comprehensive defense-in-depth security control
 
 **Detection & Response:**
 - Elastic SIEM with detection rules monitoring cloud infrastructure and API activity
-- Automated remediation workflows for common security findings
 - Centralized logging with 90-day retention for forensic analysis
 - Real-time alerting for critical security events
-- Automated incident response playbooks
+- Incident response playbooks and runbooks
+- Security operations team for manual remediation
 
 **Compliance & Hardening:**
 - CIS AWS Foundations Benchmark compliance monitored via Prisma Cloud
-- Automated compliance reporting and remediation
+- Automated compliance reporting and alerting
 - Resource tagging enforcement for governance
 - Backup and disaster recovery policies enforced
 
@@ -224,7 +224,7 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
      * Active detection/prevention by GuardDuty, SIEM, Prisma Cloud (= -2 to -3 points)
      * IAM policies and MFA blocking unauthorized access (= -2 to -3 points)
      * Managed service with AWS-controlled patching (= -3 to -4 points)
-     * Vulnerability actively monitored by Prisma Cloud with automated remediation (= -2 points)
+     * Vulnerability actively monitored by Prisma Cloud with detection and alerting (= -1 to -2 points)
      * CIS AWS Foundations or AWS Security Best Practices compliance preventing exploitation (= -2 to -3 points)
    - Identify if CVE is in CISA KEV catalog or has known active exploitation in cloud environments
    - Check for public PoCs, but consider if they're viable given the security architecture
@@ -256,7 +256,7 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
    - Consider that Prisma Cloud provides:
      * Continuous vulnerability scanning that would detect this CVE
      * CIS AWS Foundations and AWS Security Best Practices compliance validation
-     * Automated remediation workflows for both vulnerabilities and compliance violations
+     * Real-time alerting for vulnerabilities and compliance violations (manual remediation by security team)
      * Attack path analysis showing if the vulnerability is exploitable given the current security posture
      * IaC scanning that would prevent deploying vulnerable configurations
    - If exploit requires multiple evasions, significantly reduce exploitability score
@@ -276,7 +276,7 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
      * IAM policies and SCPs preventing lateral movement to other accounts/services
      * Network segmentation and private endpoints limiting network-based pivoting
      * GuardDuty and SIEM alerting enabling rapid detection and response
-     * Automated remediation reducing mean time to respond (MTTR)
+     * Security operations team response procedures and incident response runbooks
      * CloudTrail audit logs providing forensic evidence
      * Backup and disaster recovery capabilities for data restoration
    - Determine REALISTIC impact given our security architecture, not theoretical maximum impact from CVSS scores
@@ -288,7 +288,7 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
    - For managed services, check if AWS has already patched the infrastructure
    - Assess if patch can be deployed via Infrastructure as Code (IaC) updates
    - If no patch, provide vendor timeline or workaround availability
-   - Consider if automated patching (Systems Manager Patch Manager) can deploy the fix
+   - Consider if patch can be deployed during scheduled maintenance windows via Systems Manager Patch Manager
 
 6. **Additional Compensating Controls (If Needed)**
    - ONLY recommend additional controls if existing ones are insufficient

@@ -321,7 +321,8 @@ def main():
 
         st.markdown("---")
         st.markdown("### 📄 Other Pages")
-        st.page_link("streamlit_app.py", label="🔒 Container CVE Analyzer", icon="🐳")
+        st.page_link("streamlit_app.py", label="🏠 Home", icon="🏠")
+        st.page_link("pages/0_🐳_Container_CVE_Analyzer.py", label="🐳 Container CVE Analyzer", icon="🐳")
         st.page_link("pages/2_💻_VM_CVE_Analyzer.py", label="💻 VM CVE Analyzer", icon="💻")
         st.page_link("pages/3_☁️_Cloud_CVE_Analyzer.py", label="☁️ Cloud CVE Analyzer", icon="☁️")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Streamlit UI for CVE Analysis
-Interactive web interface for analyzing individual CVEs
+CVE Security Analysis Platform - Landing Page
+Main entry point for the CVE vulnerability management system
 """
 
 import os
@@ -12,284 +12,199 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    # python-dotenv not installed, will use environment variables directly
     pass
-
-from src.cve_analyzer import CVEAnalyzer
-
-
-def init_analyzer():
-    """Initialize the CVE Analyzer (cached for performance)"""
-    if "analyzer" not in st.session_state:
-        with st.spinner("Initializing CVE Analyzer..."):
-            st.session_state.analyzer = CVEAnalyzer(
-                aws_region=os.getenv("AWS_REGION", "us-east-1"),
-                model_id=os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
-                nvd_api_key=os.getenv("NVD_API_KEY"),
-            )
-    return st.session_state.analyzer
-
-
-def render_analysis_result(result):
-    """Render the analysis result in a nice format"""
-
-    # Risk Level with color coding
-    risk_colors = {
-        "CRITICAL": "🔴",
-        "HIGH": "🟠",
-        "MEDIUM": "🟡",
-        "LOW": "🟢"
-    }
-
-    decision_colors = {
-        "DENIED": "🚫",
-        "CONDITIONAL": "⚠️",
-        "APPROVED": "✅"
-    }
-
-    st.markdown("---")
-    st.markdown("## 📊 Analysis Results")
-
-    # Key Metrics Row
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        risk_emoji = risk_colors.get(result.risk_level, "⚪")
-        st.metric("Risk Level", f"{risk_emoji} {result.risk_level}")
-
-    with col2:
-        st.metric("Exploitability Score", f"{result.exploitability_score}/10")
-        with st.expander("ℹ️ How was this calculated?"):
-            st.info(result.exploitability_explanation)
-
-    with col3:
-        exploit_status = "YES ⚠️" if result.active_exploits_exist else "NO ✓"
-        st.metric("Active Exploits", exploit_status)
-
-    with col4:
-        patch_status = "YES ✓" if result.patch_available else "NO ⚠️"
-        st.metric("Patch Available", patch_status)
-
-    # Exemption Decision
-    st.markdown("---")
-    decision_emoji = decision_colors.get(result.exemption_decision, "❓")
-    st.markdown(f"### {decision_emoji} Exemption Decision: **{result.exemption_decision}**")
-
-    st.info(result.exemption_justification)
-
-    if result.caveats_and_conditions:
-        st.warning(f"**Conditions:** {result.caveats_and_conditions}")
-
-    # Detailed Analysis Sections
-    st.markdown("---")
-    st.markdown("## 📋 Detailed Analysis")
-
-    # Patch Information
-    with st.expander("🔧 Patch Information", expanded=True):
-        st.write(result.patch_details)
-
-    # Runtime Policy Recommendations
-    with st.expander("🛡️ Runtime Policy Recommendations (ACS/Prisma)", expanded=True):
-        st.write(result.runtime_policy_recommendations)
-
-    # External Controls
-    with st.expander("🔐 External Security Controls (WAF/Firewall/SIEM)", expanded=True):
-        st.write(result.external_controls_recommendations)
-
-    # Mitigation Strategies
-    with st.expander("⚙️ Mitigation Strategies", expanded=True):
-        st.write(result.mitigation_strategies)
-
-    # Container Specific Risks
-    with st.expander("🐳 Container/Kubernetes Specific Risks", expanded=True):
-        st.write(result.container_specific_risks)
 
 
 def main():
-    """Main Streamlit app"""
+    """Main landing page"""
 
     # Page config
     st.set_page_config(
-        page_title="CVE Security Analyzer",
+        page_title="CVE Security Analysis Platform",
         page_icon="🔒",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="collapsed"
     )
 
     # Header
-    st.title("🔒 Container CVE Analysis Tool")
     st.markdown("""
-    **Context-Aware CVE Risk Assessment** for containerized environments with defense-in-depth security controls.
-
-    This tool analyzes CVEs considering your existing security architecture:
-    - **Container Runtime Security:** RedHat ACS & Prisma Compute
-    - **Network Security:** PaloAlto Firewall, AWS WAF
-    - **Endpoint Protection:** CrowdStrike, Elastic-agent, Carbon Black
-    - **Monitoring:** Elastic SIEM & Prisma Cloud Enterprise
-
-    💡 **Tip:** Use the sidebar to navigate to VM or Cloud CVE analyzers for other environments.
-    """)
+    <div style='text-align: center; padding: 20px 0;'>
+        <h1 style='font-size: 3em; margin-bottom: 10px;'>🔒 CVE Security Analysis Platform</h1>
+        <p style='font-size: 1.3em; color: #666;'>
+            Context-Aware Vulnerability Risk Assessment with AI-Powered Analysis
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # Sidebar for configuration
-    with st.sidebar:
-        st.header("⚙️ Configuration")
-        st.info(f"""
-        **AWS Region:** {os.getenv('AWS_REGION', 'us-east-1')}
+    # Introduction
+    st.markdown("""
+    Welcome to the **CVE Security Analysis Platform** - a comprehensive vulnerability management system
+    powered by AWS Bedrock (Claude 3.5 Sonnet) and NIST NVD database.
 
-        **Model:** Claude 3.5 Sonnet
+    This platform provides **context-aware risk assessment** that considers your existing defense-in-depth
+    security architecture, rather than relying solely on CVSS scores.
+    """)
 
-        **Profile:** sectool-dev
-        """)
+    st.markdown("### Select Your Analysis Environment:")
+    st.markdown("")
 
-        st.markdown("---")
-        st.markdown("### 📄 Other Pages")
-        st.page_link("pages/1_🔬_Model_Comparison.py", label="🔬 Multi-Model Comparison", icon="🔬")
-        st.caption("Compare results across 4 different Bedrock models")
-
-        st.page_link("pages/2_💻_VM_CVE_Analyzer.py", label="💻 VM CVE Analyzer", icon="💻")
-        st.caption("Analyze CVEs on virtual machines")
-
-        st.page_link("pages/3_☁️_Cloud_CVE_Analyzer.py", label="☁️ Cloud CVE Analyzer", icon="☁️")
-        st.caption("Analyze CVEs on cloud infrastructure")
-
-        st.markdown("---")
-        st.markdown("### 📚 Quick Links")
-        st.markdown("- [NIST NVD Database](https://nvd.nist.gov/)")
-        st.markdown("- [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)")
-        st.markdown("- [CVSS Calculator](https://www.first.org/cvss/calculator/3.1)")
-
-    # Initialize analyzer
-    analyzer = init_analyzer()
-
-    # Input Form
-    st.markdown("## 📝 CVE Information")
-
+    # Navigation Cards
     col1, col2 = st.columns(2)
 
     with col1:
-        cve_id = st.text_input(
-            "CVE ID *",
-            placeholder="CVE-2024-1234",
-            help="Enter the CVE identifier (e.g., CVE-2024-1234)"
-        )
+        # Container CVE Analyzer Card
+        with st.container(border=True):
+            st.markdown("### 🐳 Container CVE Analyzer")
+            st.markdown("""
+            Analyze CVEs in **containerized environments** (Kubernetes, ECS, Docker).
 
-        package = st.text_input(
-            "Package Name *",
-            placeholder="e.g., openssl, lodash, jetty",
-            help="Name of the affected package or component"
-        )
+            **Security Controls:**
+            - RedHat ACS & Prisma Compute
+            - PaloAlto Firewall & AWS WAF
+            - CrowdStrike & Carbon Black
+            - Pod exec restrictions
+            - CIS-hardened infrastructure
 
-        version = st.text_input(
-            "Package Version *",
-            placeholder="e.g., 1.2.3",
-            help="Version of the affected package"
-        )
+            Perfect for: Container images, K8s pods, ECS tasks
+            """)
+            st.page_link("pages/0_🐳_Container_CVE_Analyzer.py",
+                        label="🚀 Launch Container Analyzer",
+                        icon="🐳",
+                        use_container_width=True)
 
-        severity = st.selectbox(
-            "Original Severity *",
-            options=["", "Critical", "High", "Medium", "Low"],
-            help="Severity rating from your scanner"
-        )
+        st.markdown("")
+
+        # VM CVE Analyzer Card
+        with st.container(border=True):
+            st.markdown("### 💻 VM CVE Analyzer")
+            st.markdown("""
+            Analyze CVEs on **virtual machines** (EC2, on-prem VMs).
+
+            **Security Controls:**
+            - Tenable Nessus & BigFix scanners
+            - CIS Benchmark compliance (>85%)
+            - Endpoint protection (CrowdStrike, Carbon Black)
+            - PAM, MFA, RBAC
+            - Network segmentation
+
+            Perfect for: EC2 instances, VMware VMs, OS packages
+            """)
+            st.page_link("pages/2_💻_VM_CVE_Analyzer.py",
+                        label="🚀 Launch VM Analyzer",
+                        icon="💻",
+                        use_container_width=True)
 
     with col2:
-        vuln_type = st.selectbox(
-            "Vulnerability Type (Source) *",
-            options=["", "java", "python", "nodejs", "go", "ruby", "OS", "other"],
-            help="Type/source of the vulnerability"
-        )
+        # Cloud CVE Analyzer Card
+        with st.container(border=True):
+            st.markdown("### ☁️ Cloud CVE Analyzer")
+            st.markdown("""
+            Analyze CVEs in **AWS cloud infrastructure** and services.
 
-        image = st.text_input(
-            "Container Image *",
-            placeholder="e.g., nginx:1.19, myapp/backend:v2.1",
-            help="Container image where this vulnerability was found"
-        )
+            **Security Controls:**
+            - Prisma Cloud CSPM (CIS AWS + Security Best Practices)
+            - GuardDuty, Security Hub, Config
+            - IAM policies, SCPs, MFA
+            - KMS encryption, Secrets Manager
+            - Network isolation (Private Endpoints)
 
-        summary = st.text_area(
-            "Summary",
-            placeholder="Brief description of the vulnerability...",
-            help="Optional: Brief description of the CVE (will be fetched from NVD if empty)",
-            height=100
-        )
+            Perfect for: AWS services, APIs, IaC, cloud resources
+            """)
+            st.page_link("pages/3_☁️_Cloud_CVE_Analyzer.py",
+                        label="🚀 Launch Cloud Analyzer",
+                        icon="☁️",
+                        use_container_width=True)
+
+        st.markdown("")
+
+        # Model Comparison Card
+        with st.container(border=True):
+            st.markdown("### 🔬 Multi-Model Comparison")
+            st.markdown("""
+            Compare CVE analysis across **4 different AI models**.
+
+            **Models Compared:**
+            - Claude 3.5 Sonnet
+            - Claude Sonnet 4.1
+            - Claude 4.1 Opus
+            - Amazon Nova Pro
+
+            Perfect for: Evaluating model performance, accuracy testing
+            """)
+            st.page_link("pages/1_🔬_Model_Comparison.py",
+                        label="🚀 Launch Model Comparison",
+                        icon="🔬",
+                        use_container_width=True)
 
     st.markdown("---")
 
-    # Analyze button
-    col1, col2, col3 = st.columns([1, 1, 3])
+    # Key Features Section
+    st.markdown("## 🌟 Key Features")
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        analyze_button = st.button("🔍 Analyze CVE", type="primary", use_container_width=True)
+        st.markdown("""
+        #### 🎯 Context-Aware Analysis
+        - Evaluates actual exploitability given YOUR security controls
+        - Reduces false positives from generic CVSS scoring
+        - Considers defense-in-depth architecture
+        """)
 
     with col2:
-        if st.button("🔄 Clear Form", use_container_width=True):
-            st.rerun()
+        st.markdown("""
+        #### 🤖 AI-Powered Intelligence
+        - Powered by Claude 3.5 Sonnet
+        - Analyzes attack vectors, exploitability, impact
+        - Provides exemption recommendations
+        """)
 
-    # Validation and Analysis
-    if analyze_button:
-        # Validate required fields
-        if not cve_id or not package or not version or not severity or not vuln_type or not image:
-            st.error("⚠️ Please fill in all required fields marked with *")
-        elif not cve_id.upper().startswith("CVE-"):
-            st.error("⚠️ CVE ID must start with 'CVE-' (e.g., CVE-2024-1234)")
-        else:
-            # Perform analysis
-            with st.spinner(f"🔍 Analyzing {cve_id}... This may take 30-60 seconds..."):
-                try:
-                    result = analyzer.analyze_cve(
-                        cve_id=cve_id.upper(),
-                        component_name=package,
-                        component_version=version,
-                        source_type=vuln_type,
-                        image_name=image
-                    )
+    with col3:
+        st.markdown("""
+        #### 📊 Comprehensive Reporting
+        - Detailed risk analysis and justifications
+        - Compensating control recommendations
+        - Exportable JSON results
+        """)
 
-                    if result:
-                        st.success(f"✅ Analysis complete for {cve_id}")
-                        render_analysis_result(result)
+    st.markdown("---")
 
-                        # Download button for JSON
-                        st.markdown("---")
-                        st.download_button(
-                            label="📥 Download Analysis (JSON)",
-                            data=result.model_dump_json(indent=2),
-                            file_name=f"{cve_id}_analysis.json",
-                            mime="application/json"
-                        )
-                    else:
-                        st.error(f"""
-                        ❌ Failed to analyze {cve_id}
+    # System Information
+    col1, col2, col3 = st.columns(3)
 
-                        **Possible reasons:**
-                        - CVE not found in NIST NVD database
-                        - Network connectivity issues
-                        - Invalid CVE ID format
+    with col1:
+        st.info(f"""
+        **AWS Region**
+        {os.getenv('AWS_REGION', 'us-east-1')}
+        """)
 
-                        Please verify the CVE ID and try again.
-                        """)
+    with col2:
+        st.info("""
+        **AI Model**
+        Claude 3.5 Sonnet
+        """)
 
-                except Exception as e:
-                    st.error(f"""
-                    ❌ Error during analysis: {str(e)}
-
-                    **Troubleshooting:**
-                    1. Verify AWS credentials are configured
-                    2. Check Bedrock model access
-                    3. Ensure .env file is properly configured
-                    4. Check network connectivity
-                    """)
-
-                    with st.expander("🐛 Debug Information"):
-                        st.code(str(e))
+    with col3:
+        st.info("""
+        **Data Source**
+        NIST NVD Database
+        """)
 
     # Footer
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
         <small>
-        CVE Security Analysis Tool | Powered by AWS Bedrock (Claude 3.5 Sonnet) & NIST NVD
+        CVE Security Analysis Platform | Powered by AWS Bedrock & NIST NVD
         <br>
-        Context-aware risk assessment with defense-in-depth security controls
+        Context-aware vulnerability risk assessment with defense-in-depth security controls
+        <br><br>
+        📚 <b>Quick Links:</b>
+        <a href="https://nvd.nist.gov/" target="_blank">NIST NVD</a> |
+        <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank">CISA KEV</a> |
+        <a href="https://www.cisecurity.org/cis-benchmarks" target="_blank">CIS Benchmarks</a>
         </small>
     </div>
     """, unsafe_allow_html=True)

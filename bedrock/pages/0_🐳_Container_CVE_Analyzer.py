@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-VM CVE Analyzer Page
-Interactive web interface for analyzing CVEs on Virtual Machines
+Container CVE Analyzer Page
+Interactive web interface for analyzing CVEs on Containers
 """
 
 import os
@@ -15,19 +15,19 @@ except ImportError:
     # python-dotenv not installed, will use environment variables directly
     pass
 
-from src.vm_cve_analyzer import VMCVEAnalyzer
+from src.cve_analyzer import CVEAnalyzer
 
 
 def init_analyzer():
-    """Initialize the VM CVE Analyzer (cached for performance)"""
-    if "vm_analyzer" not in st.session_state:
-        with st.spinner("Initializing VM CVE Analyzer..."):
-            st.session_state.vm_analyzer = VMCVEAnalyzer(
+    """Initialize the CVE Analyzer (cached for performance)"""
+    if "analyzer" not in st.session_state:
+        with st.spinner("Initializing CVE Analyzer..."):
+            st.session_state.analyzer = CVEAnalyzer(
                 aws_region=os.getenv("AWS_REGION", "us-east-1"),
                 model_id=os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
                 nvd_api_key=os.getenv("NVD_API_KEY"),
             )
-    return st.session_state.vm_analyzer
+    return st.session_state.analyzer
 
 
 def render_analysis_result(result):
@@ -88,9 +88,9 @@ def render_analysis_result(result):
     with st.expander("🔧 Patch Information", expanded=True):
         st.write(result.patch_details)
 
-    # Endpoint Protection Recommendations
-    with st.expander("🛡️ Endpoint Protection Recommendations (CrowdStrike/Carbon Black)", expanded=True):
-        st.write(result.endpoint_protection_recommendations)
+    # Runtime Policy Recommendations
+    with st.expander("🛡️ Runtime Policy Recommendations (ACS/Prisma)", expanded=True):
+        st.write(result.runtime_policy_recommendations)
 
     # External Controls
     with st.expander("🔐 External Security Controls (WAF/Firewall/SIEM)", expanded=True):
@@ -100,9 +100,9 @@ def render_analysis_result(result):
     with st.expander("⚙️ Mitigation Strategies", expanded=True):
         st.write(result.mitigation_strategies)
 
-    # VM Specific Risks
-    with st.expander("💻 Virtual Machine Specific Risks", expanded=True):
-        st.write(result.vm_specific_risks)
+    # Container Specific Risks
+    with st.expander("🐳 Container/Kubernetes Specific Risks", expanded=True):
+        st.write(result.container_specific_risks)
 
 
 def main():
@@ -110,24 +110,22 @@ def main():
 
     # Page config
     st.set_page_config(
-        page_title="VM CVE Security Analyzer",
-        page_icon="💻",
+        page_title="Container CVE Security Analyzer",
+        page_icon="🐳",
         layout="wide",
         initial_sidebar_state="expanded"
     )
 
     # Header
-    st.title("💻 Virtual Machine CVE Analysis Tool")
+    st.title("🐳 Container CVE Analysis Tool")
     st.markdown("""
-    **Context-Aware CVE Risk Assessment** for virtual machine environments with defense-in-depth security controls.
+    **Context-Aware CVE Risk Assessment** for containerized environments with defense-in-depth security controls.
 
-    This tool analyzes CVEs considering your existing VM security architecture:
-    - **Vulnerability Scanning:** Tenable Nessus, BigFix
-    - **Compliance:** CIS Benchmark validation (>85% compliance)
-    - **Network Security:** PaloAlto Firewall, AWS WAF, Private Endpoints
+    This tool analyzes CVEs considering your existing security architecture:
+    - **Container Runtime Security:** RedHat ACS & Prisma Compute
+    - **Network Security:** PaloAlto Firewall, AWS WAF
     - **Endpoint Protection:** CrowdStrike, Elastic-agent, Carbon Black
-    - **Access Controls:** PAM, MFA, RBAC
-    - **Monitoring:** Elastic SIEM, Prisma Cloud Enterprise
+    - **Monitoring:** Elastic SIEM & Prisma Cloud Enterprise
     """)
 
     st.markdown("---")
@@ -146,7 +144,7 @@ def main():
         st.markdown("---")
         st.markdown("### 📄 Other Pages")
         st.page_link("streamlit_app.py", label="🏠 Home", icon="🏠")
-        st.page_link("pages/0_🐳_Container_CVE_Analyzer.py", label="🐳 Container CVE Analyzer", icon="🐳")
+        st.page_link("pages/2_💻_VM_CVE_Analyzer.py", label="💻 VM CVE Analyzer", icon="💻")
         st.page_link("pages/3_☁️_Cloud_CVE_Analyzer.py", label="☁️ Cloud CVE Analyzer", icon="☁️")
         st.page_link("pages/1_🔬_Model_Comparison.py", label="🔬 Multi-Model Comparison", icon="🔬")
 
@@ -154,8 +152,7 @@ def main():
         st.markdown("### 📚 Quick Links")
         st.markdown("- [NIST NVD Database](https://nvd.nist.gov/)")
         st.markdown("- [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)")
-        st.markdown("- [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks)")
-        st.markdown("- [Tenable Nessus](https://www.tenable.com/products/nessus)")
+        st.markdown("- [CVSS Calculator](https://www.first.org/cvss/calculator/3.1)")
 
     # Initialize analyzer
     analyzer = init_analyzer()
@@ -173,8 +170,8 @@ def main():
         )
 
         package = st.text_input(
-            "Package/Component Name *",
-            placeholder="e.g., openssl, kernel, systemd",
+            "Package Name *",
+            placeholder="e.g., openssl, lodash, jetty",
             help="Name of the affected package or component"
         )
 
@@ -187,32 +184,27 @@ def main():
         severity = st.selectbox(
             "Original Severity *",
             options=["", "Critical", "High", "Medium", "Low"],
-            help="Severity rating from your scanner (Nessus/BigFix)"
+            help="Severity rating from your scanner"
         )
 
     with col2:
         vuln_type = st.selectbox(
             "Vulnerability Type (Source) *",
-            options=["", "OS", "system package", "python", "java", "nodejs", "go", "ruby", "other"],
+            options=["", "java", "python", "nodejs", "go", "ruby", "OS", "other"],
             help="Type/source of the vulnerability"
         )
 
-        vm_identifier = st.text_input(
-            "VM Identifier *",
-            placeholder="e.g., i-1234567890abcdef0, hostname, IP address",
-            help="Virtual machine identifier (instance ID, hostname, or IP address)"
+        image = st.text_input(
+            "Container Image *",
+            placeholder="e.g., nginx:1.19, myapp/backend:v2.1",
+            help="Container image where this vulnerability was found"
         )
 
-        os_name = st.text_input(
-            "Operating System *",
-            placeholder="e.g., Ubuntu 22, RHEL 8, Amazon Linux 2023, Windows Server 2022",
-            help="Operating system name and version (used for OS-specific CIS benchmark hardening)"
-        )
-
-        scanner = st.selectbox(
-            "Scanner Source",
-            options=["Tenable Nessus", "BigFix", "AWS Inspector", "Other"],
-            help="Which vulnerability scanner detected this CVE"
+        summary = st.text_area(
+            "Summary",
+            placeholder="Brief description of the vulnerability...",
+            help="Optional: Brief description of the CVE (will be fetched from NVD if empty)",
+            height=100
         )
 
     st.markdown("---")
@@ -230,7 +222,7 @@ def main():
     # Validation and Analysis
     if analyze_button:
         # Validate required fields
-        if not cve_id or not package or not version or not severity or not vuln_type or not vm_identifier or not os_name:
+        if not cve_id or not package or not version or not severity or not vuln_type or not image:
             st.error("⚠️ Please fill in all required fields marked with *")
         elif not cve_id.upper().startswith("CVE-"):
             st.error("⚠️ CVE ID must start with 'CVE-' (e.g., CVE-2024-1234)")
@@ -243,8 +235,7 @@ def main():
                         component_name=package,
                         component_version=version,
                         source_type=vuln_type,
-                        vm_identifier=vm_identifier,
-                        os_name=os_name
+                        image_name=image
                     )
 
                     if result:
@@ -256,7 +247,7 @@ def main():
                         st.download_button(
                             label="📥 Download Analysis (JSON)",
                             data=result.model_dump_json(indent=2),
-                            file_name=f"{cve_id}_vm_analysis.json",
+                            file_name=f"{cve_id}_container_analysis.json",
                             mime="application/json"
                         )
                     else:
@@ -290,9 +281,9 @@ def main():
     st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
         <small>
-        VM CVE Security Analysis Tool | Powered by AWS Bedrock (Claude 3.5 Sonnet) & NIST NVD
+        Container CVE Security Analysis Tool | Powered by AWS Bedrock (Claude 3.5 Sonnet) & NIST NVD
         <br>
-        Context-aware risk assessment with Tenable Nessus, BigFix, and defense-in-depth security controls
+        Context-aware risk assessment with defense-in-depth security controls
         </small>
     </div>
     """, unsafe_allow_html=True)

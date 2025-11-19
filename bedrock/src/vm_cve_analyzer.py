@@ -101,6 +101,7 @@ Your task is to analyze a CVE exemption request for a virtual machine and provid
 - Component Version: {component_version}
 - Source Type: {source_type}
 - Virtual Machine: {vm_identifier}
+- Operating System: {os_name}
 - CVSS Score: {cvss_score}
 - Severity: {severity}
 - Attack Vector: {attack_vector}
@@ -123,12 +124,13 @@ Our AWS-based datacenter already has multiple layers of defense-in-depth securit
 - Network segmentation with security groups and NACLs restricting VM-to-VM communication
 
 **Hardened Virtual Machines:**
-- All virtual machines run on hardened OS images
-- VM hardening meets >85% compliance with CIS (Center for Internet Security) benchmark requirements
+- All virtual machines run on hardened OS images based on {os_name}
+- VM hardening meets >85% compliance with OS-specific CIS benchmark for {os_name}
+- CIS benchmark controls are validated and enforced through Tenable Nessus and BigFix scanning
 - Security baselines include:
-  * Disabled unnecessary services and ports
+  * Disabled unnecessary services and ports per CIS {os_name} benchmark
   * Restricted network access and minimal open ports
-  * Secure system configurations and kernel hardening
+  * Secure system configurations and kernel hardening specific to {os_name}
   * Minimal attack surface with only required packages installed
   * Regular security patching schedules
   * Strong authentication and access controls
@@ -176,7 +178,7 @@ Our AWS-based datacenter already has multiple layers of defense-in-depth securit
 **Access Controls:**
 - Privileged access management (PAM) for administrative access
 - Multi-factor authentication (MFA) required for all VM access
-- Just-in-time (JIT) access provisioning for administrative tasks
+- Role-based access control (RBAC) with least privilege principle
 - Session recording and audit logging for all privileged sessions
 
 **CRITICAL INSTRUCTION:**
@@ -192,17 +194,17 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
    - Start with the CVE's attack vector and determine which existing controls block or mitigate it:
      * Network-based exploits: Consider PaloAlto firewall, WAF, private endpoints, network segmentation, security groups
      * Local exploits: Consider endpoint protection (CrowdStrike, Elastic-agent, Carbon Black) AND CIS-hardened VMs (>85% compliance validated by Nessus/BigFix)
-     * Privilege escalation: Consider PAM, MFA, JIT access, and hardened OS configurations
+     * Privilege escalation: Consider PAM, MFA, RBAC, and hardened OS configurations
      * Web application exploits: Consider WAF protection
      * Host-level exploits: Consider CIS-hardened VMs with disabled unnecessary services, restricted access, and minimal attack surface
    - Assess the REALISTIC risk level after accounting for defense-in-depth, not just the CVSS score
    - For VM environments, consider if:
-     * The vulnerability requires services/ports that are disabled in CIS-hardened VMs (validated by Nessus/BigFix scanning)
+     * The vulnerability requires services/ports that are disabled in CIS-hardened VMs running {os_name} (validated by Nessus/BigFix scanning)
      * The vulnerability is already detected and tracked by Tenable Nessus or BigFix scanners
-     * Privilege escalation is mitigated by PAM, MFA, and hardened configurations
+     * Privilege escalation is mitigated by PAM, MFA, and hardened configurations specific to {os_name}
      * Endpoint protection actively prevents exploitation attempts
      * Network segmentation limits lateral movement
-     * CIS compliance controls (monitored by Nessus/BigFix) prevent the vulnerable configuration
+     * OS-specific CIS benchmark controls for {os_name} (monitored by Nessus/BigFix) prevent the vulnerable configuration
 
 2. **Exploitability Analysis with Defense Considerations**
    - Rate exploitability from 1-10, but REDUCE the score based on:
@@ -229,11 +231,11 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
      * PAM and MFA requirements
      * SIEM detection rules
    - Consider if exploitation requires:
-     * Services/ports that are disabled in CIS-hardened VMs (validated by compliance scans)
+     * Services/ports that are disabled in CIS-hardened {os_name} VMs (validated by compliance scans)
      * Privilege escalation on hardened infrastructure with PAM/MFA
-     * Packages or software not installed due to minimal attack surface policy
+     * Packages or software not installed due to minimal attack surface policy for {os_name}
      * Network access that is restricted by security groups/NACLs
-     * Configurations that would be flagged as non-compliant by Nessus/BigFix CIS benchmark scans
+     * Configurations that would be flagged as non-compliant by Nessus/BigFix CIS benchmark scans for {os_name}
    - Consider that Nessus and BigFix provide:
      * Continuous monitoring that would detect vulnerable configurations
      * Automated remediation workflows that could patch the vulnerability
@@ -286,10 +288,10 @@ Do NOT simply map CVSS scores directly to risk levels. You must perform a CONTEX
    **APPROVED** if:
    - CVSS < 7.0 AND existing controls provide adequate protection
    - Attack vector is fully blocked by existing architecture (e.g., requires direct internet access but none exists)
-   - Exploit requires services/ports that are disabled on CIS-hardened VMs
+   - Exploit requires services/ports that are disabled on CIS-hardened {os_name} VMs
    - Exploit requires multiple privilege escalations AND endpoint protection actively monitors for this behavior
    - Attack complexity is HIGH AND SIEM/endpoint protection provides detection/prevention
-   - Vulnerability is theoretical/requires conditions that cannot occur in our environment (e.g., requires packages not installed)
+   - Vulnerability is theoretical/requires conditions that cannot occur in our environment (e.g., requires packages not installed on {os_name} per minimal attack surface policy)
 
    Provide 2-3 sentence justification that explicitly references which existing security controls mitigate this CVE and why the residual risk is acceptable (or not).
 
@@ -306,6 +308,7 @@ Provide your analysis:"""
         component_version: str,
         source_type: str,
         vm_identifier: str,
+        os_name: str,
     ) -> Optional[VMCVEAnalysisResult]:
         """
         Analyze a CVE for a virtual machine and provide exemption recommendation
@@ -316,6 +319,7 @@ Provide your analysis:"""
             component_version: Component version
             source_type: Source type (python, java, nodejs, OS, system package)
             vm_identifier: Virtual machine identifier (hostname, instance ID, etc.)
+            os_name: Operating system name and version (e.g., 'Ubuntu 22', 'RHEL 8')
 
         Returns:
             VMCVEAnalysisResult with comprehensive analysis or None if CVE not found
@@ -338,6 +342,7 @@ Provide your analysis:"""
             "component_version": component_version,
             "source_type": source_type,
             "vm_identifier": vm_identifier,
+            "os_name": os_name,
             "cvss_score": cvss.get("baseScore", "N/A"),
             "severity": cvss.get("baseSeverity", "N/A"),
             "attack_vector": cvss.get("attackVector", "N/A"),
@@ -372,6 +377,7 @@ Provide your analysis:"""
         component_version: str,
         source_type: str,
         vm_identifier: str,
+        os_name: str,
     ) -> Optional[str]:
         """
         Analyze CVE and return JSON string
@@ -380,7 +386,7 @@ Provide your analysis:"""
             JSON string with analysis results or None if failed
         """
         result = self.analyze_cve(
-            cve_id, component_name, component_version, source_type, vm_identifier
+            cve_id, component_name, component_version, source_type, vm_identifier, os_name
         )
 
         if result:
@@ -393,7 +399,7 @@ Provide your analysis:"""
 
         Args:
             cve_requests: List of dicts with keys: cve_id, component_name, component_version,
-                         source_type, vm_identifier
+                         source_type, vm_identifier, os_name
 
         Returns:
             List of analysis results
@@ -407,6 +413,7 @@ Provide your analysis:"""
                 component_version=request["component_version"],
                 source_type=request["source_type"],
                 vm_identifier=request["vm_identifier"],
+                os_name=request["os_name"],
             )
 
             if result:
