@@ -283,7 +283,7 @@ You can use different Bedrock models by setting `BEDROCK_MODEL_ID` in `.env`:
 | Model | Best For | Speed | Cost |
 |-------|----------|-------|------|
 | `anthropic.claude-3-5-sonnet-20241022-v2:0` | **Recommended** - Best balance | Fast | Medium |
-| `anthropic.claude-3-opus-20240229-v1:0` | Most thorough analysis | Slow | High |
+| `anthropic.claude-3-opus-20240229-v1:0-v1:0` | Most thorough analysis | Slow | High |
 | `anthropic.claude-3-haiku-20240307-v1:0` | Quick screening | Very Fast | Low |
 
 ## Troubleshooting

@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cve-analyzer
+  namespace: cve-analyzer
+  labels:
+    app: cve-analyzer
+    version: v1
+spec:
+  replicas: 2  # Run 2 replicas for high availability
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cve-analyzer
+  template:
+    metadata:
+      labels:
+        app: cve-analyzer
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8501"
+        prometheus.io/path: "/_stcore/health"
+    spec:
+      serviceAccountName: cve-analyzer-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+      - name: cve-analyzer
+        # IMPORTANT: Replace with your ECR image URI
+        # Format: <account-id>.dkr.ecr.<region>.amazonaws.com/cve-analyzer:latest
+        image: REPLACE_WITH_YOUR_ECR_IMAGE_URI  # e.g., 123456789012.dkr.ecr.us-east-1.amazonaws.com/cve-analyzer:latest
+        imagePullPolicy: Always
+
+        ports:
+        - name: http
+          containerPort: 8501
+          protocol: TCP
+
+        env:
+        # Environment variables from ConfigMap
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: cve-analyzer-config
+              key: AWS_REGION
+
+        # Environment variables from Secret
+        - name: NVD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cve-analyzer-secrets
+              key: NVD_API_KEY
+              optional: true
+
+        # AWS credentials provided by IRSA (ServiceAccount annotation)
+        # No need to set AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Streamlit needs write access to /tmp
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+
+      # Affinity rules for better pod distribution
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cve-analyzer
+              topologyKey: kubernetes.io/hostname

@@ -154,7 +154,7 @@ for result in results:
 # Use Claude Opus for more thorough analysis
 analyzer = CVEAnalyzer(
     aws_region="us-east-1",
-    model_id="anthropic.claude-3-opus-20240229-v1:0"
+    model_id="anthropic.claude-3-opus-20240229-v1:0-v1:0"
 )
 
 # Use Claude Haiku for faster, cheaper analysis
