@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Streamlit UI for CVE Analysis
-Interactive web interface for analyzing individual CVEs
+Cloud CVE Analyzer Page
+Interactive web interface for analyzing CVEs on Cloud Infrastructure
 """
 
 import os
@@ -15,19 +15,19 @@ except ImportError:
     # python-dotenv not installed, will use environment variables directly
     pass
 
-from src.cve_analyzer import CVEAnalyzer
+from src.cloud_cve_analyzer import CloudCVEAnalyzer
 
 
 def init_analyzer():
-    """Initialize the CVE Analyzer (cached for performance)"""
-    if "analyzer" not in st.session_state:
-        with st.spinner("Initializing CVE Analyzer..."):
-            st.session_state.analyzer = CVEAnalyzer(
+    """Initialize the Cloud CVE Analyzer (cached for performance)"""
+    if "cloud_analyzer" not in st.session_state:
+        with st.spinner("Initializing Cloud CVE Analyzer..."):
+            st.session_state.cloud_analyzer = CloudCVEAnalyzer(
                 aws_region=os.getenv("AWS_REGION", "us-east-1"),
                 model_id=os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
                 nvd_api_key=os.getenv("NVD_API_KEY"),
             )
-    return st.session_state.analyzer
+    return st.session_state.cloud_analyzer
 
 
 def render_analysis_result(result):
@@ -88,21 +88,21 @@ def render_analysis_result(result):
     with st.expander("🔧 Patch Information", expanded=True):
         st.write(result.patch_details)
 
-    # Runtime Policy Recommendations
-    with st.expander("🛡️ Runtime Policy Recommendations (ACS/Prisma)", expanded=True):
-        st.write(result.runtime_policy_recommendations)
+    # Cloud Security Recommendations
+    with st.expander("🛡️ Cloud Security Recommendations (Prisma Cloud/AWS Services)", expanded=True):
+        st.write(result.cloud_security_recommendations)
 
     # External Controls
-    with st.expander("🔐 External Security Controls (WAF/Firewall/SIEM)", expanded=True):
+    with st.expander("🔐 External Security Controls (WAF/GuardDuty/Shield)", expanded=True):
         st.write(result.external_controls_recommendations)
 
     # Mitigation Strategies
     with st.expander("⚙️ Mitigation Strategies", expanded=True):
         st.write(result.mitigation_strategies)
 
-    # Container Specific Risks
-    with st.expander("🐳 Container/Kubernetes Specific Risks", expanded=True):
-        st.write(result.container_specific_risks)
+    # Cloud Specific Risks
+    with st.expander("☁️ Cloud Infrastructure Specific Risks", expanded=True):
+        st.write(result.cloud_specific_risks)
 
 
 def main():
@@ -110,24 +110,25 @@ def main():
 
     # Page config
     st.set_page_config(
-        page_title="CVE Security Analyzer",
-        page_icon="🔒",
+        page_title="Cloud CVE Security Analyzer",
+        page_icon="☁️",
         layout="wide",
         initial_sidebar_state="expanded"
     )
 
     # Header
-    st.title("🔒 Container CVE Analysis Tool")
+    st.title("☁️ Cloud Infrastructure CVE Analysis Tool")
     st.markdown("""
-    **Context-Aware CVE Risk Assessment** for containerized environments with defense-in-depth security controls.
+    **Context-Aware CVE Risk Assessment** for AWS cloud infrastructure with comprehensive security controls.
 
-    This tool analyzes CVEs considering your existing security architecture:
-    - **Container Runtime Security:** RedHat ACS & Prisma Compute
-    - **Network Security:** PaloAlto Firewall, AWS WAF
-    - **Endpoint Protection:** CrowdStrike, Elastic-agent, Carbon Black
-    - **Monitoring:** Elastic SIEM & Prisma Cloud Enterprise
-
-    💡 **Tip:** Use the sidebar to navigate to VM or Cloud CVE analyzers for other environments.
+    This tool analyzes CVEs considering your existing cloud security architecture:
+    - **CSPM:** Prisma Cloud Enterprise (CIS AWS Foundations + AWS Security Best Practices)
+    - **Vulnerability Scanning:** Prisma Cloud (agentless workloads, containers, serverless, IaC)
+    - **Cloud-Native Security:** GuardDuty, Security Hub, Config, CloudTrail, Systems Manager
+    - **Network Security:** PaloAlto Firewall, AWS WAF, Shield, Private Endpoints
+    - **Identity Security:** IAM, MFA, SCPs, temporary credentials, IAM Access Analyzer
+    - **Data Protection:** KMS encryption, S3 policies, Secrets Manager, Macie
+    - **Monitoring:** Elastic SIEM, automated remediation workflows
     """)
 
     st.markdown("---")
@@ -145,20 +146,17 @@ def main():
 
         st.markdown("---")
         st.markdown("### 📄 Other Pages")
+        st.page_link("streamlit_app.py", label="🔒 Container CVE Analyzer", icon="🐳")
         st.page_link("pages/1_🔬_Model_Comparison.py", label="🔬 Multi-Model Comparison", icon="🔬")
-        st.caption("Compare results across 4 different Bedrock models")
-
         st.page_link("pages/2_💻_VM_CVE_Analyzer.py", label="💻 VM CVE Analyzer", icon="💻")
-        st.caption("Analyze CVEs on virtual machines")
-
-        st.page_link("pages/3_☁️_Cloud_CVE_Analyzer.py", label="☁️ Cloud CVE Analyzer", icon="☁️")
-        st.caption("Analyze CVEs on cloud infrastructure")
 
         st.markdown("---")
         st.markdown("### 📚 Quick Links")
         st.markdown("- [NIST NVD Database](https://nvd.nist.gov/)")
         st.markdown("- [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)")
-        st.markdown("- [CVSS Calculator](https://www.first.org/cvss/calculator/3.1)")
+        st.markdown("- [CIS AWS Foundations Benchmark](https://www.cisecurity.org/benchmark/amazon_web_services)")
+        st.markdown("- [AWS Security Best Practices](https://docs.aws.amazon.com/security/)")
+        st.markdown("- [Prisma Cloud](https://www.paloaltonetworks.com/prisma/cloud)")
 
     # Initialize analyzer
     analyzer = init_analyzer()
@@ -176,8 +174,8 @@ def main():
         )
 
         package = st.text_input(
-            "Package Name *",
-            placeholder="e.g., openssl, lodash, jetty",
+            "Package/Component Name *",
+            placeholder="e.g., AWS SDK, boto3, Terraform provider",
             help="Name of the affected package or component"
         )
 
@@ -190,20 +188,26 @@ def main():
         severity = st.selectbox(
             "Original Severity *",
             options=["", "Critical", "High", "Medium", "Low"],
-            help="Severity rating from your scanner"
+            help="Severity rating from your scanner (Prisma Cloud/AWS Inspector)"
         )
 
     with col2:
         vuln_type = st.selectbox(
             "Vulnerability Type (Source) *",
-            options=["", "java", "python", "nodejs", "go", "ruby", "OS", "other"],
+            options=["", "API", "service", "configuration", "IAM", "network", "IaC", "container", "serverless", "other"],
             help="Type/source of the vulnerability"
         )
 
-        image = st.text_input(
-            "Container Image *",
-            placeholder="e.g., nginx:1.19, myapp/backend:v2.1",
-            help="Container image where this vulnerability was found"
+        cloud_resource = st.text_input(
+            "Cloud Resource *",
+            placeholder="e.g., arn:aws:ec2:us-east-1:123456789012:instance/i-1234567890abcdef0",
+            help="Cloud resource identifier (ARN, resource ID, or service name)"
+        )
+
+        scanner = st.selectbox(
+            "Scanner Source",
+            options=["Prisma Cloud", "AWS Inspector", "AWS Security Hub", "GuardDuty", "Other"],
+            help="Which security tool detected this CVE"
         )
 
         summary = st.text_area(
@@ -228,7 +232,7 @@ def main():
     # Validation and Analysis
     if analyze_button:
         # Validate required fields
-        if not cve_id or not package or not version or not severity or not vuln_type or not image:
+        if not cve_id or not package or not version or not severity or not vuln_type or not cloud_resource:
             st.error("⚠️ Please fill in all required fields marked with *")
         elif not cve_id.upper().startswith("CVE-"):
             st.error("⚠️ CVE ID must start with 'CVE-' (e.g., CVE-2024-1234)")
@@ -241,7 +245,7 @@ def main():
                         component_name=package,
                         component_version=version,
                         source_type=vuln_type,
-                        image_name=image
+                        cloud_resource=cloud_resource
                     )
 
                     if result:
@@ -253,7 +257,7 @@ def main():
                         st.download_button(
                             label="📥 Download Analysis (JSON)",
                             data=result.model_dump_json(indent=2),
-                            file_name=f"{cve_id}_analysis.json",
+                            file_name=f"{cve_id}_cloud_analysis.json",
                             mime="application/json"
                         )
                     else:
@@ -287,9 +291,9 @@ def main():
     st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
         <small>
-        CVE Security Analysis Tool | Powered by AWS Bedrock (Claude 3.5 Sonnet) & NIST NVD
+        Cloud CVE Security Analysis Tool | Powered by AWS Bedrock (Claude 3.5 Sonnet) & NIST NVD
         <br>
-        Context-aware risk assessment with defense-in-depth security controls
+        Context-aware risk assessment with Prisma Cloud CSPM, AWS-native security services, and defense-in-depth controls
         </small>
     </div>
     """, unsafe_allow_html=True)
