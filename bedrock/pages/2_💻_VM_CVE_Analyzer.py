@@ -197,12 +197,6 @@ def main():
             help="Type/source of the vulnerability"
         )
 
-        vm_identifier = st.text_input(
-            "VM Identifier *",
-            placeholder="e.g., i-1234567890abcdef0, hostname, IP address",
-            help="Virtual machine identifier (instance ID, hostname, or IP address)"
-        )
-
         os_name = st.text_input(
             "Operating System *",
             placeholder="e.g., Ubuntu 22, RHEL 8, Amazon Linux 2023, Windows Server 2022",
@@ -230,7 +224,7 @@ def main():
     # Validation and Analysis
     if analyze_button:
         # Validate required fields
-        if not cve_id or not package or not version or not severity or not vuln_type or not vm_identifier or not os_name:
+        if not cve_id or not package or not version or not severity or not vuln_type or not os_name:
             st.error("⚠️ Please fill in all required fields marked with *")
         elif not cve_id.upper().startswith("CVE-"):
             st.error("⚠️ CVE ID must start with 'CVE-' (e.g., CVE-2024-1234)")
@@ -243,7 +237,6 @@ def main():
                         component_name=package,
                         component_version=version,
                         source_type=vuln_type,
-                        vm_identifier=vm_identifier,
                         os_name=os_name
                     )
 

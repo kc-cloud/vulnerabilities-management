@@ -100,7 +100,6 @@ Your task is to analyze a CVE exemption request for a virtual machine and provid
 - Affected Component: {component_name}
 - Component Version: {component_version}
 - Source Type: {source_type}
-- Virtual Machine: {vm_identifier}
 - Operating System: {os_name}
 - CVSS Score: {cvss_score}
 - Severity: {severity}
@@ -307,7 +306,6 @@ Provide your analysis:"""
         component_name: str,
         component_version: str,
         source_type: str,
-        vm_identifier: str,
         os_name: str,
     ) -> Optional[VMCVEAnalysisResult]:
         """
@@ -318,7 +316,6 @@ Provide your analysis:"""
             component_name: Affected component name
             component_version: Component version
             source_type: Source type (python, java, nodejs, OS, system package)
-            vm_identifier: Virtual machine identifier (hostname, instance ID, etc.)
             os_name: Operating system name and version (e.g., 'Ubuntu 22', 'RHEL 8')
 
         Returns:
@@ -341,7 +338,6 @@ Provide your analysis:"""
             "component_name": component_name,
             "component_version": component_version,
             "source_type": source_type,
-            "vm_identifier": vm_identifier,
             "os_name": os_name,
             "cvss_score": cvss.get("baseScore", "N/A"),
             "severity": cvss.get("baseSeverity", "N/A"),
@@ -376,7 +372,6 @@ Provide your analysis:"""
         component_name: str,
         component_version: str,
         source_type: str,
-        vm_identifier: str,
         os_name: str,
     ) -> Optional[str]:
         """
@@ -386,7 +381,7 @@ Provide your analysis:"""
             JSON string with analysis results or None if failed
         """
         result = self.analyze_cve(
-            cve_id, component_name, component_version, source_type, vm_identifier, os_name
+            cve_id, component_name, component_version, source_type, os_name
         )
 
         if result:
@@ -399,7 +394,7 @@ Provide your analysis:"""
 
         Args:
             cve_requests: List of dicts with keys: cve_id, component_name, component_version,
-                         source_type, vm_identifier, os_name
+                         source_type, os_name
 
         Returns:
             List of analysis results
@@ -412,7 +407,6 @@ Provide your analysis:"""
                 component_name=request["component_name"],
                 component_version=request["component_version"],
                 source_type=request["source_type"],
-                vm_identifier=request["vm_identifier"],
                 os_name=request["os_name"],
             )
 

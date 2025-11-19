@@ -100,7 +100,7 @@ Your task is to analyze a CVE exemption request for cloud infrastructure and pro
 - Affected Component: {component_name}
 - Component Version: {component_version}
 - Source Type: {source_type}
-- Cloud Resource: {cloud_resource}
+- Resource Type: {resource_type}
 - CVSS Score: {cvss_score}
 - Severity: {severity}
 - Attack Vector: {attack_vector}
@@ -339,7 +339,7 @@ Provide your analysis:"""
         component_name: str,
         component_version: str,
         source_type: str,
-        cloud_resource: str,
+        resource_type: str,
     ) -> Optional[CloudCVEAnalysisResult]:
         """
         Analyze a CVE for cloud infrastructure and provide exemption recommendation
@@ -349,7 +349,7 @@ Provide your analysis:"""
             component_name: Affected component name
             component_version: Component version
             source_type: Source type (API, service, configuration, IAM, network)
-            cloud_resource: Cloud resource identifier (ARN, resource ID, service name)
+            resource_type: Type of AWS resource (e.g., 'S3 bucket', 'EC2 instance', 'Lambda function')
 
         Returns:
             CloudCVEAnalysisResult with comprehensive analysis or None if CVE not found
@@ -371,7 +371,7 @@ Provide your analysis:"""
             "component_name": component_name,
             "component_version": component_version,
             "source_type": source_type,
-            "cloud_resource": cloud_resource,
+            "resource_type": resource_type,
             "cvss_score": cvss.get("baseScore", "N/A"),
             "severity": cvss.get("baseSeverity", "N/A"),
             "attack_vector": cvss.get("attackVector", "N/A"),
@@ -405,7 +405,7 @@ Provide your analysis:"""
         component_name: str,
         component_version: str,
         source_type: str,
-        cloud_resource: str,
+        resource_type: str,
     ) -> Optional[str]:
         """
         Analyze CVE and return JSON string
@@ -414,7 +414,7 @@ Provide your analysis:"""
             JSON string with analysis results or None if failed
         """
         result = self.analyze_cve(
-            cve_id, component_name, component_version, source_type, cloud_resource
+            cve_id, component_name, component_version, source_type, resource_type
         )
 
         if result:
@@ -427,7 +427,7 @@ Provide your analysis:"""
 
         Args:
             cve_requests: List of dicts with keys: cve_id, component_name, component_version,
-                         source_type, cloud_resource
+                         source_type, resource_type
 
         Returns:
             List of analysis results
@@ -440,7 +440,7 @@ Provide your analysis:"""
                 component_name=request["component_name"],
                 component_version=request["component_version"],
                 source_type=request["source_type"],
-                cloud_resource=request["cloud_resource"],
+                resource_type=request["resource_type"],
             )
 
             if result:

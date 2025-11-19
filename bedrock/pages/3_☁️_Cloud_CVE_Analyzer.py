@@ -199,10 +199,12 @@ def main():
             help="Type/source of the vulnerability"
         )
 
-        cloud_resource = st.text_input(
-            "Cloud Resource *",
-            placeholder="e.g., arn:aws:ec2:us-east-1:123456789012:instance/i-1234567890abcdef0",
-            help="Cloud resource identifier (ARN, resource ID, or service name)"
+        resource_type = st.selectbox(
+            "Resource Type *",
+            options=["", "EC2 instance", "S3 bucket", "Lambda function", "RDS database", "ECS task",
+                     "EKS cluster", "API Gateway", "CloudFront distribution", "IAM role/policy",
+                     "VPC/Security Group", "Load Balancer", "SNS/SQS", "DynamoDB table", "Other"],
+            help="Type of AWS resource affected (generic type, not specific ARN)"
         )
 
         scanner = st.selectbox(
@@ -233,7 +235,7 @@ def main():
     # Validation and Analysis
     if analyze_button:
         # Validate required fields
-        if not cve_id or not package or not version or not severity or not vuln_type or not cloud_resource:
+        if not cve_id or not package or not version or not severity or not vuln_type or not resource_type:
             st.error("⚠️ Please fill in all required fields marked with *")
         elif not cve_id.upper().startswith("CVE-"):
             st.error("⚠️ CVE ID must start with 'CVE-' (e.g., CVE-2024-1234)")
@@ -246,7 +248,7 @@ def main():
                         component_name=package,
                         component_version=version,
                         source_type=vuln_type,
-                        cloud_resource=cloud_resource
+                        resource_type=resource_type
                     )
 
                     if result:
